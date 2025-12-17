@@ -14,6 +14,7 @@ function DateAnalyticsPage({ applications, onClose }) {
     { id: 'custom', label: 'Custom Range' }
   ];
 
+  
   // Group applications by date
   useEffect(() => {
     const grouped = {};
