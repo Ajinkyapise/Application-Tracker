@@ -8,6 +8,7 @@ import Modal from './components/Modal';
 import Form from './components/Form';
 import { auth, db, addApplication, updateApplication, deleteApplication, getApplications, loginUser, registerUser, logoutUser } from './firebase-config';
 import { onAuthStateChanged } from 'firebase/auth';
+import DateAnalyticsPage from './components/DateAnalyticsPage';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -33,6 +34,11 @@ function App() {
   });
 
   const statuses = ['applied', 'interview', 'offer', 'rejected', 'bookmarked'];
+  
+const [showAnalytics, setShowAnalytics] = useState(false);
+
+
+
 
   // Check if user is logged in
   useEffect(() => {
@@ -254,12 +260,20 @@ function App() {
       </div>
 
       <StatsSection stats={stats} />
-      <div className="controls">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} />
-        <button className="btn" onClick={() => handleOpenModal()}>
-          ➕ Add Application
-        </button>
-      </div>
+      
+        
+<div className="controls">
+  <SearchBar value={searchTerm} onChange={setSearchTerm} />
+  <button className="btn" onClick={() => handleOpenModal()}>
+    ➕ Add Application
+  </button>
+  <button className="btn" onClick={() => setShowAnalytics(true)}>
+    📊 Analytics
+  </button>
+</div>
+
+
+      
       <Table
         applications={filteredApplications}
         onEdit={handleOpenModal}
@@ -283,6 +297,14 @@ function App() {
           </div>
         </div>
       )}
+
+     
+{showAnalytics && (
+  <DateAnalyticsPage 
+    applications={applications} 
+    onClose={() => setShowAnalytics(false)} 
+  />
+)}
 
       {/* Add/Edit Modal */}
       <Modal
