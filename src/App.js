@@ -1,29 +1,49 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
+
 import './components/styles.css';
-import Header from './components/Header';
-import StatsSection from './components/StatsSection';
-import SearchBar from './components/SearchBar';
-import Table from './components/Table';
-import Modal from './components/Modal';
+import Header from './components/common/Header';
+import StatsSection from './components/Applications/StatsSection';
+import SearchBar from './components/Applications/SearchBar';
+import Table from './components/Applications/Table';
+import Modal from './components/common/Modal';
 import Form from './components/Form';
-import { auth, db, addApplication, updateApplication, deleteApplication, getApplications, loginUser, registerUser, logoutUser } from './firebase-config';
+import DateAnalyticsPage from './components/analytics/DateAnalyticsPage';
+import CourseTrackerPage from './components/Courses/CourseTrackerPage';
+import TimeTrackerPage from './Time/TimeTrackerPage';
+
+import {
+  auth,
+  addApplication,
+  updateApplication,
+  deleteApplication,
+  getApplications,
+  loginUser,
+  registerUser,
+  logoutUser
+} from './firebase-config';
+
 import { onAuthStateChanged } from 'firebase/auth';
-import DateAnalyticsPage from './components/DateAnalyticsPage';
 
 function App() {
+  /* ================= AUTH ================= */
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  
+
+  /* ================= APPLICATIONS ================= */
   const [applications, setApplications] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+
   const [formData, setFormData] = useState({
     company: '',
     position: '',
@@ -34,33 +54,26 @@ function App() {
   });
 
   const statuses = ['applied', 'interview', 'offer', 'rejected', 'bookmarked'];
-  
-const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
-
-
-
-  // Check if user is logged in
+  /* ================= AUTH STATE ================= */
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsub = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        // Load applications from Firebase
-        try {
-          const apps = await getApplications(currentUser.uid);
-          setApplications(apps);
-        } catch (error) {
-          console.error('Error loading applications:', error);
-        }
+        const apps = await getApplications(currentUser.uid);
+        setApplications(apps);
       } else {
         setUser(null);
         setApplications([]);
       }
       setLoading(false);
     });
-    return unsubscribe;
+
+    return unsub;
   }, []);
 
+  /* ================= AUTH HANDLERS ================= */
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -74,24 +87,35 @@ const [showAnalytics, setShowAnalytics] = useState(false);
       setShowAuthModal(false);
       setAuthEmail('');
       setAuthPassword('');
-    } catch (error) {
-      setAuthError(error.message);
+    } catch (err) {
+      setAuthError(err.message);
     }
   };
 
   const handleLogout = async () => {
-    try {
-      await logoutUser();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await logoutUser();
   };
 
-  const filteredApplications = applications.filter(app =>
-    app.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.position.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  /* ================= FILTER & GROUP ================= */
+  const filteredApplications = applications.filter(app => {
+    const matchesSearch =
+      app.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.position.toLowerCase().includes(searchTerm.toLowerCase());
 
+    const matchesDate =
+      selectedDate ? app.dateApplied === selectedDate : true;
+
+    return matchesSearch && matchesDate;
+  });
+
+  const groupedApplications = filteredApplications.reduce((acc, app) => {
+    const date = app.dateApplied;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(app);
+    return acc;
+  }, {});
+
+  /* ================= STATS ================= */
   const stats = {
     total: applications.length,
     applied: applications.filter(a => a.status === 'applied').length,
@@ -99,6 +123,7 @@ const [showAnalytics, setShowAnalytics] = useState(false);
     offers: applications.filter(a => a.status === 'offer').length
   };
 
+  /* ================= CRUD ================= */
   const handleOpenModal = (app = null) => {
     if (app) {
       setEditingId(app.id);
@@ -117,129 +142,77 @@ const [showAnalytics, setShowAnalytics] = useState(false);
     setShowModal(true);
   };
 
-  const handleCloseModal = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.company || !formData.position) return;
+
+    if (editingId) {
+      await updateApplication(user.uid, editingId, formData);
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === editingId ? { ...formData, id: editingId } : app
+        )
+      );
+    } else {
+      const ref = await addApplication(user.uid, formData);
+      setApplications(prev => [{ ...formData, id: ref.id }, ...prev]);
+    }
+
     setShowModal(false);
     setEditingId(null);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const handleDelete = (id) => setDeleteConfirmId(id);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.company.trim() || !formData.position.trim()) {
-      alert('Please fill in company and position fields');
-      return;
-    }
-
-    try {
-      if (editingId) {
-        // Update existing application
-        await updateApplication(user.uid, editingId, formData);
-        setApplications(prev =>
-          prev.map(app =>
-            app.id === editingId ? { ...formData, id: editingId } : app
-          )
-        );
-      } else {
-        // Add new application
-        const docRef = await addApplication(user.uid, formData);
-        setApplications(prev => [{ ...formData, id: docRef.id }, ...prev]);
-      }
-      handleCloseModal();
-    } catch (error) {
-      console.error('Error saving application:', error);
-      alert('Error saving application');
-    }
-  };
-
-  const handleDelete = (id) => {
-    setDeleteConfirmId(id);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (deleteConfirmId) {
-      try {
-        await deleteApplication(user.uid, deleteConfirmId);
-        setApplications(prev => prev.filter(app => app.id !== deleteConfirmId));
-        setDeleteConfirmId(null);
-      } catch (error) {
-        console.error('Error deleting application:', error);
-        alert('Error deleting application');
-      }
-    }
-  };
-
-  const handleCancelDelete = () => {
+  const confirmDelete = async () => {
+    await deleteApplication(user.uid, deleteConfirmId);
+    setApplications(prev => prev.filter(a => a.id !== deleteConfirmId));
     setDeleteConfirmId(null);
   };
 
+  /* ================= LOADING ================= */
   if (loading) {
-    return <div className="container"><p>Loading...</p></div>;
+    return <div className="container">Loading...</div>;
   }
 
+  /* ================= AUTH GATE ================= */
   if (!user) {
     return (
       <div className="container">
         <Header />
-        <div className="empty-state">
-          <p>Please sign in to track your job applications</p>
-          <button className="btn" onClick={() => { setIsLogin(true); setShowAuthModal(true); }}>
-            Sign In
-          </button>
-          <button className="btn-secondary" onClick={() => { setIsLogin(false); setShowAuthModal(true); }} style={{ marginLeft: '10px' }}>
-            Sign Up
-          </button>
-        </div>
+        <p>Please sign in to continue</p>
 
-        {/* Auth Modal */}
+        <button className="btn" onClick={() => { setIsLogin(true); setShowAuthModal(true); }}>
+          Sign In
+        </button>
+        <button className="btn-secondary" onClick={() => { setIsLogin(false); setShowAuthModal(true); }}>
+          Sign Up
+        </button>
+
         {showAuthModal && (
-          <div className="modal-overlay" onClick={() => setShowAuthModal(false)}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-overlay">
+            <div className="modal">
               <h2>{isLogin ? 'Sign In' : 'Sign Up'}</h2>
               <form onSubmit={handleAuthSubmit}>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    className="form-input"
-                    value={authEmail}
-                    onChange={(e) => setAuthEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Password</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    required
-                  />
-                </div>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={authEmail}
+                  onChange={e => setAuthEmail(e.target.value)}
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={authPassword}
+                  onChange={e => setAuthPassword(e.target.value)}
+                  required
+                />
                 {authError && <p style={{ color: 'red' }}>{authError}</p>}
-                <div className="form-actions">
-                  <button type="button" className="btn-secondary" onClick={() => setShowAuthModal(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn">
-                    {isLogin ? 'Sign In' : 'Sign Up'}
-                  </button>
-                </div>
-              </form>
-              <p style={{ marginTop: '20px', textAlign: 'center' }}>
-                {isLogin ? "Don't have an account? " : 'Already have an account? '}
-                <button onClick={() => setIsLogin(!isLogin)} style={{ background: 'none', border: 'none', color: '#218085', cursor: 'pointer', textDecoration: 'underline' }}>
-                  {isLogin ? 'Sign Up' : 'Sign In'}
+                <button className="btn">
+                  {isLogin ? 'Sign In' : 'Sign Up'}
                 </button>
-              </p>
+              </form>
             </div>
           </div>
         )}
@@ -247,80 +220,114 @@ const [showAnalytics, setShowAnalytics] = useState(false);
     );
   }
 
+  /* ================= MAIN APP ================= */
   return (
     <div className="container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <Header />
+      <Header />
+
+      {/* Navigation */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <span style={{ marginRight: '15px' }}>Welcome, {user.email}</span>
-          <button className="btn-secondary" onClick={handleLogout}>
-            Logout
-          </button>
+          <Link to="/" className="btn-secondary">🏠 Applications</Link>
+          <Link to="/courses" className="btn-secondary" style={{ marginLeft: 10 }}>
+            📚 Courses
+          </Link>
+          <Link to="/time" className="btn-secondary" style={{ marginLeft: 10 }}>
+            ⏱ Time Tracker
+          </Link>
         </div>
+        <button className="btn-secondary" onClick={handleLogout}>Logout</button>
       </div>
 
-      <StatsSection stats={stats} />
-      
-        
-<div className="controls">
-  <SearchBar value={searchTerm} onChange={setSearchTerm} />
-  <button className="btn" onClick={() => handleOpenModal()}>
-    ➕ Add Application
-  </button>
-  <button className="btn" onClick={() => setShowAnalytics(true)}>
-    📊 Analytics
-  </button>
-</div>
+      <Routes>
+        {/* APPLICATION TRACKER */}
+        <Route
+          path="/"
+          element={
+            <>
+              <StatsSection stats={stats} />
 
+              <div className="controls">
+                <SearchBar value={searchTerm} onChange={setSearchTerm} />
+                <button className="btn" onClick={() => handleOpenModal()}>
+                  ➕ Add Application
+                </button>
+                <button className="btn" onClick={() => setShowAnalytics(true)}>
+                  📊 Analytics
+                </button>
+              </div>
 
-      
-      <Table
-        applications={filteredApplications}
-        onEdit={handleOpenModal}
-        onDelete={handleDelete}
-      />
+              <Table
+                groupedApplications={groupedApplications}
+                selectedDate={selectedDate}
+                onDateSelect={(date) =>
+                  setSelectedDate(prev => (prev === date ? null : date))
+                }
+                onEdit={handleOpenModal}
+                onDelete={handleDelete}
+              />
+            </>
+          }
+        />
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="modal-overlay" onClick={handleCancelDelete}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>Confirm Delete</h2>
-            <p>Are you sure you want to delete this application? This action cannot be undone.</p>
-            <div className="form-actions">
-              <button className="btn-secondary" onClick={handleCancelDelete}>
-                Cancel
-              </button>
-              <button className="btn btn-danger" onClick={handleConfirmDelete}>
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* COURSES */}
+        <Route
+          path="/courses"
+          element={<CourseTrackerPage user={user} />}
+        />
+
+        {/* TIME TRACKER */}
+        <Route
+          path="/time"
+          element={<TimeTrackerPage user={user} />}
+        />
+
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+
+      {/* ANALYTICS */}
+      {showAnalytics && (
+        <DateAnalyticsPage
+          applications={applications}
+          onClose={() => setShowAnalytics(false)}
+        />
       )}
 
-     
-{showAnalytics && (
-  <DateAnalyticsPage 
-    applications={applications} 
-    onClose={() => setShowAnalytics(false)} 
-  />
-)}
-
-      {/* Add/Edit Modal */}
+      {/* ADD / EDIT APPLICATION */}
       <Modal
         isOpen={showModal}
-        title={editingId ? 'Edit Application' : 'Add New Application'}
-        onClose={handleCloseModal}
+        title={editingId ? 'Edit Application' : 'Add Application'}
+        onClose={() => setShowModal(false)}
       >
         <Form
           formData={formData}
-          onInputChange={handleInputChange}
+          onInputChange={e =>
+            setFormData({ ...formData, [e.target.name]: e.target.value })
+          }
           onSubmit={handleSubmit}
-          editingId={editingId}
-          onCancel={handleCloseModal}
           statuses={statuses}
+          onCancel={() => setShowModal(false)}
         />
       </Modal>
+
+      {/* DELETE CONFIRM */}
+      {deleteConfirmId && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <p>Delete this application?</p>
+            <button className="btn-danger" onClick={confirmDelete}>
+              Delete
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => setDeleteConfirmId(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

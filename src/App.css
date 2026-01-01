@@ -1,38 +1,68 @@
-.App {
-  text-align: center;
+/* ================= APP LAYOUT ================= */
+
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* ================= NAVIGATION ================= */
+
+.app-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.nav-links {
+  display: flex;
+  gap: 10px;
 }
 
-.App-header {
-  background-color: #282c34;
+/* ================= PAGE WRAPPER ================= */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ================= PAGE CONTROLS ================= */
+
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ================= AUTH ================= */
+
+.page-center {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 16px;
 }
 
-.App-link {
-  color: #61dafb;
+.auth-actions {
+  display: flex;
+  gap: 12px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ================= UTILITY ================= */
+
+.error {
+  color: var(--danger);
+  font-size: 0.9rem;
 }

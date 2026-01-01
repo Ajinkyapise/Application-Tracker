@@ -1,0 +1,41 @@
+.time-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.time-card {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+.time-date {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.time-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.time-add-category {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.error {
+  color: var(--danger);
+  margin-top: 8px;
+}

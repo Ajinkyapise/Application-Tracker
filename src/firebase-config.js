@@ -1,9 +1,27 @@
-// firebase.js
+// firebase-config.js
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  query,
+  where
+} from 'firebase/firestore';
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
 
-// Replace with your Firebase config from Firebase Console
+/* ================= FIREBASE CONFIG ================= */
+
 const firebaseConfig = {
   apiKey: "AIzaSyDrFao0Rxpzh57lziGFZZDAPFsrmuC8U6A",
   authDomain: "applicationtracker-b8398.firebaseapp.com",
@@ -14,49 +32,142 @@ const firebaseConfig = {
   measurementId: "G-YM930XK7HW"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
-// Auth Functions
-export const registerUser = (email, password) => {
-  return createUserWithEmailAndPassword(auth, email, password);
-};
+/* ================= AUTH ================= */
 
-export const loginUser = (email, password) => {
-  return signInWithEmailAndPassword(auth, email, password);
-};
+export const registerUser = (email, password) =>
+  createUserWithEmailAndPassword(auth, email, password);
 
-export const logoutUser = () => {
-  return signOut(auth);
-};
+export const loginUser = (email, password) =>
+  signInWithEmailAndPassword(auth, email, password);
 
-// Database Functions
-export const addApplication = (userId, applicationData) => {
-  return addDoc(collection(db, 'users', userId, 'applications'), {
-    ...applicationData,
+export const logoutUser = () => signOut(auth);
+
+/* ================= APPLICATIONS ================= */
+
+export const addApplication = (userId, data) =>
+  addDoc(collection(db, 'users', userId, 'applications'), {
+    ...data,
     createdAt: new Date(),
     updatedAt: new Date()
   });
-};
 
-export const updateApplication = (userId, applicationId, applicationData) => {
-  return updateDoc(doc(db, 'users', userId, 'applications', applicationId), {
-    ...applicationData,
+export const updateApplication = (userId, id, data) =>
+  updateDoc(doc(db, 'users', userId, 'applications', id), {
+    ...data,
     updatedAt: new Date()
   });
-};
 
-export const deleteApplication = (userId, applicationId) => {
-  return deleteDoc(doc(db, 'users', userId, 'applications', applicationId));
-};
+export const deleteApplication = (userId, id) =>
+  deleteDoc(doc(db, 'users', userId, 'applications', id));
 
 export const getApplications = async (userId) => {
-  const applicationsRef = collection(db, 'users', userId, 'applications');
-  const querySnapshot = await getDocs(applicationsRef);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
+  const snap = await getDocs(collection(db, 'users', userId, 'applications'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
+/* ================= COURSES ================= */
+
+export const addCourse = (userId, course) =>
+  addDoc(collection(db, 'users', userId, 'courses'), {
+    ...course,
+    completedLessons: 0,
+    dailyLogs: {},
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+
+export const getCourses = async (userId) => {
+  const snap = await getDocs(collection(db, 'users', userId, 'courses'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
+export const deleteCourse = (userId, courseId) =>
+  deleteDoc(doc(db, 'users', userId, 'courses', courseId));
+
+export const logDailyProgress = async (userId, courseId, lessons) => {
+  const ref = doc(db, 'users', userId, 'courses', courseId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) throw new Error('Course not found');
+
+  const course = snap.data();
+  const today = new Date().toISOString().split('T')[0];
+
+  const updatedLogs = {
+    ...(course.dailyLogs || {}),
+    [today]: (course.dailyLogs?.[today] || 0) + lessons
+  };
+
+  const updatedCompleted = (course.completedLessons || 0) + lessons;
+
+  await updateDoc(ref, {
+    dailyLogs: updatedLogs,
+    completedLessons: updatedCompleted,
+    updatedAt: new Date()
+  });
+
+  return {
+    id: courseId,
+    ...course,
+    dailyLogs: updatedLogs,
+    completedLessons: updatedCompleted
+  };
+};
+
+/* ================= TIME TRACKER ================= */
+
+// One document per day
+export const getTimeLog = async (userId, date) => {
+  const ref = doc(db, 'users', userId, 'timeLogs', date);
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data() : null;
+};
+
+export const saveTimeLog = async (userId, date, activities) => {
+  const ref = doc(db, 'users', userId, 'timeLogs', date);
+  await setDoc(
+    ref,
+    {
+      date,
+      activities,
+      updatedAt: new Date(),
+      createdAt: new Date()
+    },
+    { merge: true }
+  );
+};
+
+// Fetch time logs for a date range (weekly analytics)
+export const getTimeLogsInRange = async (userId, startDate, endDate) => {
+  const logsRef = collection(db, 'users', userId, 'timeLogs');
+  const q = query(
+    logsRef,
+    where('date', '>=', startDate),
+    where('date', '<=', endDate)
+  );
+
+  const snap = await getDocs(q);
+  return snap.docs.map(d => d.data());
+};
+
+/* ================= GOALS ================= */
+
+// Default goals document (1 per user)
+export const getGoals = async (userId) => {
+  const ref = doc(db, 'users', userId, 'goals', 'default');
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data() : null;
+};
+
+export const saveGoals = async (userId, goals) => {
+  const ref = doc(db, 'users', userId, 'goals', 'default');
+  await setDoc(ref, {
+    goals,
+    updatedAt: new Date()
+  });
 };
