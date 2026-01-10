@@ -11,6 +11,7 @@ import Form from './components/Form';
 import DateAnalyticsPage from './components/analytics/DateAnalyticsPage';
 import CourseTrackerPage from './components/Courses/CourseTrackerPage';
 import TimeTrackerPage from './Time/TimeTrackerPage';
+import LinkedinTrackerPage from './components/LinkedinForm/LinkedinTrackerPage';  // ✅ NEW
 
 import {
   auth,
@@ -182,10 +183,17 @@ function App() {
         <Header />
         <p>Please sign in to continue</p>
 
-        <button className="btn" onClick={() => { setIsLogin(true); setShowAuthModal(true); }}>
+        <button
+          className="btn"
+          onClick={() => { setIsLogin(true); setShowAuthModal(true); }}
+        >
           Sign In
         </button>
-        <button className="btn-secondary" onClick={() => { setIsLogin(false); setShowAuthModal(true); }}>
+
+        <button
+          className="btn-secondary"
+          onClick={() => { setIsLogin(false); setShowAuthModal(true); }}
+        >
           Sign Up
         </button>
 
@@ -229,14 +237,23 @@ function App() {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <Link to="/" className="btn-secondary">🏠 Applications</Link>
+
           <Link to="/courses" className="btn-secondary" style={{ marginLeft: 10 }}>
             📚 Courses
           </Link>
+
           <Link to="/time" className="btn-secondary" style={{ marginLeft: 10 }}>
             ⏱ Time Tracker
           </Link>
+
+          <Link to="/linkedin" className="btn-secondary" style={{ marginLeft: 10 }}>
+            💼 LinkedIn Tracker
+          </Link>
         </div>
-        <button className="btn-secondary" onClick={handleLogout}>Logout</button>
+
+        <button className="btn-secondary" onClick={handleLogout}>
+          Logout
+        </button>
       </div>
 
       <Routes>
@@ -249,9 +266,11 @@ function App() {
 
               <div className="controls">
                 <SearchBar value={searchTerm} onChange={setSearchTerm} />
+
                 <button className="btn" onClick={() => handleOpenModal()}>
                   ➕ Add Application
                 </button>
+
                 <button className="btn" onClick={() => setShowAnalytics(true)}>
                   📊 Analytics
                 </button>
@@ -280,6 +299,12 @@ function App() {
         <Route
           path="/time"
           element={<TimeTrackerPage user={user} />}
+        />
+
+        {/* LINKEDIN TRACKER */}
+        <Route
+          path="/linkedin"
+          element={<LinkedinTrackerPage user={user} />}
         />
 
         {/* FALLBACK */}

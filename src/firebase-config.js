@@ -171,3 +171,37 @@ export const saveGoals = async (userId, goals) => {
     updatedAt: new Date()
   });
 };
+
+/* ================= LINKEDIN TRACKER ✅ NEW ================= */
+
+export const addLinkedinEntry = (userId, data) =>
+  addDoc(collection(db, 'users', userId, 'linkedinTracker'), {
+    recruiter: {
+      name: data.recruiter?.name || "",
+      phone: data.recruiter?.phone || "",
+      email: data.recruiter?.email || "",
+      linkedin: data.recruiter?.linkedin || ""
+    },
+    postUrl: data.postUrl || "",
+    status: data.status || "Applied",
+    appliedDate: data.appliedDate,
+    followedUp: data.followedUp ?? false,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+
+export const updateLinkedinEntry = (userId, id, updates) =>
+  updateDoc(doc(db, 'users', userId, 'linkedinTracker', id), {
+    ...updates,
+    updatedAt: new Date()
+  });
+
+export const deleteLinkedinEntry = (userId, id) =>
+  deleteDoc(doc(db, 'users', userId, 'linkedinTracker', id));
+
+export const getLinkedinEntries = async (userId) => {
+  const snap = await getDocs(
+    collection(db, 'users', userId, 'linkedinTracker')
+  );
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+};
