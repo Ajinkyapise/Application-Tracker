@@ -238,13 +238,13 @@ function App() {
         <div>
           <Link to="/" className="btn-secondary">🏠 Applications</Link>
 
-          <Link to="/courses" className="btn-secondary" style={{ marginLeft: 10 }}>
+          {/* <Link to="/courses" className="btn-secondary" style={{ marginLeft: 10 }}>
             📚 Courses
           </Link>
 
           <Link to="/time" className="btn-secondary" style={{ marginLeft: 10 }}>
             ⏱ Time Tracker
-          </Link>
+          </Link> */}
 
           <Link to="/linkedin" className="btn-secondary" style={{ marginLeft: 10 }}>
             💼 LinkedIn Tracker
