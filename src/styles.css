@@ -1,0 +1,367 @@
+/* components/styles.css */
+
+/* -------- Theme -------- */
+:root{
+  --bg: #0b1220;
+  --panel: rgba(255,255,255,.06);
+  --panel-2: rgba(255,255,255,.09);
+  --border: rgba(255,255,255,.12);
+
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.68);
+
+  --primary: #6d5efc;
+  --primary-2: #8a7dff;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  --shadow: 0 18px 45px rgba(0,0,0,.45);
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+*{ box-sizing: border-box; }
+html, body { height: 100%; }
+
+body{
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(1000px 600px at 10% -10%, rgba(109,94,252,.35), transparent 60%),
+    radial-gradient(900px 600px at 90% 0%, rgba(34,197,94,.20), transparent 60%),
+    radial-gradient(800px 600px at 60% 110%, rgba(245,158,11,.16), transparent 55%),
+    var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  line-height: 1.45;
+}
+
+/* -------- Layout container -------- */
+.container{
+  width: min(1100px, calc(100% - 32px));
+  margin: 28px auto;
+  padding: 18px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 6px);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+/* -------- Header (works for your <Header /> component) -------- */
+header, .header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+
+header h1, .header h1{
+  font-size: 20px;
+  margin: 0;
+  letter-spacing: .2px;
+}
+
+header p, .header p{
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* -------- Links -------- */
+a{
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover{
+  text-decoration: none;
+}
+
+/* -------- Controls row -------- */
+.controls{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 0 12px;
+}
+
+/* -------- Inputs -------- */
+input, select, textarea{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,.18);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s ease, transform .15s ease, background .15s ease;
+}
+
+input::placeholder, textarea::placeholder{
+  color: rgba(255,255,255,.45);
+}
+
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(109,94,252,.55);
+  background: rgba(0,0,0,.24);
+}
+
+/* If your SearchBar is a single input */
+.controls input[type="text"], .controls input[type="search"]{
+  min-width: 260px;
+  flex: 1 1 320px;
+}
+
+/* -------- Buttons -------- */
+button{
+  font: inherit;
+}
+
+.btn,
+.btn-secondary,
+.btn-danger{
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn{
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: white;
+  box-shadow: 0 10px 22px rgba(109,94,252,.25);
+}
+
+.btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(109,94,252,.28);
+}
+
+.btn-secondary{
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover{
+  background: rgba(255,255,255,.10);
+  transform: translateY(-1px);
+}
+
+.btn-danger{
+  background: rgba(239,68,68,.16);
+  border-color: rgba(239,68,68,.35);
+  color: rgba(255,255,255,.92);
+}
+
+.btn-danger:hover{
+  background: rgba(239,68,68,.22);
+  transform: translateY(-1px);
+}
+
+.btn:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* -------- Stats section (works with most card layouts) -------- */
+.stats-grid,
+.stats,
+.stats-section{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+@media (max-width: 980px){
+  .stats-grid, .stats, .stats-section{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px){
+  .stats-grid, .stats, .stats-section{
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card, .stat, .stats-card{
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  box-shadow: 0 12px 30px rgba(0,0,0,.24);
+}
+
+.stat-card .label, .stat .label{
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.stat-card .value, .stat .value{
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+/* Optional nice accent strip if your Stats cards support it */
+.stat-card::before, .stats-card::before{
+  content: "";
+  display: block;
+  height: 3px;
+  width: 42px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), rgba(34,197,94,.85));
+  margin-bottom: 10px;
+  opacity: .95;
+}
+
+/* -------- Table area -------- */
+.table-wrap, .table-container{
+  overflow: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.04);
+}
+
+/* If your Table component uses a <table> element */
+table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 720px; /* enables horizontal scroll on small screens */
+}
+
+thead th{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.72);
+  background: rgba(15,23,42,.75);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 12px;
+}
+
+tbody td{
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  color: rgba(255,255,255,.88);
+}
+
+tbody tr:hover td{
+  background: rgba(255,255,255,.05);
+}
+
+/* Section headers by date (if you render date rows/divs) */
+.group-title, .date-header{
+  margin: 14px 0 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.86);
+  font-weight: 600;
+}
+
+/* Status pill (add className="pill applied/interview/offer/rejected/bookmarked") */
+.pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  font-size: 12px;
+}
+
+.pill.applied{ border-color: rgba(109,94,252,.35); background: rgba(109,94,252,.12); }
+.pill.interview{ border-color: rgba(245,158,11,.40); background: rgba(245,158,11,.14); }
+.pill.offer{ border-color: rgba(34,197,94,.40); background: rgba(34,197,94,.14); }
+.pill.rejected{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.14); }
+.pill.bookmarked{ border-color: rgba(148,163,184,.35); background: rgba(148,163,184,.12); }
+
+/* -------- Modal styling (matches your .modal-overlay + .modal usage) -------- */
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 1000;
+}
+
+/* Your auth modal and delete confirm uses .modal */
+.modal{
+  width: min(560px, 100%);
+  border-radius: calc(var(--radius) + 4px);
+  border: 1px solid rgba(255,255,255,.14);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+  box-shadow: 0 28px 70px rgba(0,0,0,.60);
+  backdrop-filter: blur(12px);
+  padding: 16px;
+}
+
+.modal h2{
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.modal p{
+  color: var(--muted);
+  margin: 10px 0 14px;
+}
+
+.modal form{
+  display: grid;
+  gap: 10px;
+}
+
+.modal .btn, .modal .btn-secondary, .modal .btn-danger{
+  width: 100%;
+}
+
+/* -------- Small screens polish -------- */
+@media (max-width: 520px){
+  .container{
+    width: calc(100% - 18px);
+    padding: 14px;
+    margin: 18px auto;
+  }
+
+  /* your nav row is inline-styled; this helps spacing */
+  .btn-secondary{
+    padding: 10px 12px;
+  }
+}
+
+/* -------- Nice scrollbars (optional) -------- */
+*::-webkit-scrollbar{ height: 10px; width: 10px; }
+*::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.14);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track{
+  background: rgba(255,255,255,.04);
+}

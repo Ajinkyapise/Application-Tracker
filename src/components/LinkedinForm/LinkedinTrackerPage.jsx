@@ -8,6 +8,8 @@ import {
 } from "../../firebase-config";
 import "./linkedinTracker.css";
 
+/* ---------------- HELPERS ---------------- */
+
 function daysElapsed(date) {
   const start = new Date(date);
   const today = new Date();
@@ -17,18 +19,28 @@ function daysElapsed(date) {
   );
 }
 
+function shouldAutoIgnore(row) {
+  const days = daysElapsed(row.appliedDate);
+  const pendingStatuses = [
+    "Applied on LinkedIn",
+    "Applied on Mail"
+  ];
+
+  return days > 10 && pendingStatuses.includes(row.status);
+}
+
+/* ---------------- DEFAULT FORM ---------------- */
+
 const EMPTY_FORM = {
   recruiter: {
-    name: "",
-    phone: "",
-    email: "",
     linkedin: ""
   },
   postUrl: "",
-  status: "Applied",
-  appliedDate: new Date().toISOString().split("T")[0],
-  followedUp: false
+  status: "Applied on LinkedIn",
+  appliedDate: new Date().toISOString().split("T")[0]
 };
+
+/* ---------------- PAGE ---------------- */
 
 export default function LinkedinTrackerPage({ user }) {
   const [rows, setRows] = useState([]);
@@ -39,11 +51,24 @@ export default function LinkedinTrackerPage({ user }) {
   const [form, setForm] = useState(EMPTY_FORM);
 
   /* ---------------- LOAD DATA ---------------- */
+
   async function load() {
     if (!user?.uid) return;
     setLoading(true);
+
     const data = await getLinkedinEntries(user.uid);
-    setRows(data);
+
+    // Auto mark ignored after 10 days
+    for (const row of data) {
+      if (shouldAutoIgnore(row)) {
+        await updateLinkedinEntry(user.uid, row.id, {
+          status: "Ignored"
+        });
+      }
+    }
+
+    const refreshed = await getLinkedinEntries(user.uid);
+    setRows(refreshed);
     setLoading(false);
   }
 
@@ -52,6 +77,7 @@ export default function LinkedinTrackerPage({ user }) {
   }, [user]);
 
   /* ---------------- OPEN FORM ---------------- */
+
   function openAddForm() {
     setEditingRow(null);
     setForm(EMPTY_FORM);
@@ -65,9 +91,10 @@ export default function LinkedinTrackerPage({ user }) {
   }
 
   /* ---------------- SAVE ---------------- */
+
   async function saveForm() {
-    if (!form.recruiter.name || !form.postUrl) {
-      alert("Recruiter name and LinkedIn post are required");
+    if (!form.postUrl) {
+      alert("LinkedIn job post URL is required");
       return;
     }
 
@@ -83,15 +110,8 @@ export default function LinkedinTrackerPage({ user }) {
     load();
   }
 
-  /* ---------------- TOGGLE FOLLOW UP ---------------- */
-  async function toggleFollowUp(row) {
-    await updateLinkedinEntry(user.uid, row.id, {
-      followedUp: !row.followedUp
-    });
-    load();
-  }
-
   /* ---------------- DELETE ---------------- */
+
   async function remove(id) {
     if (!window.confirm("Delete this entry?")) return;
     await deleteLinkedinEntry(user.uid, id);
@@ -102,6 +122,7 @@ export default function LinkedinTrackerPage({ user }) {
 
   return (
     <div className="p-6">
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-semibold">
           📌 LinkedIn Applications Tracker
@@ -120,18 +141,21 @@ export default function LinkedinTrackerPage({ user }) {
         <table className="w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-3 text-left">Recruiter Contact</th>
-              <th className="p-3 text-left">LinkedIn Post</th>
+              <th className="p-3 text-left">Recruiter</th>
+              <th className="p-3 text-left">Job Post</th>
               <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-center">Days Elapsed</th>
-              <th className="p-3 text-center">Followed Up</th>
               <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {rows.map(row => (
-              <tr key={row.id} className="border-t">
+              <tr
+                key={row.id}
+                className={`border-t hover:bg-gray-50 ${
+                  row.status === "Ignored" ? "opacity-50" : ""
+                }`}
+              >
                 <td className="p-3">
                   <RecruiterCell recruiter={row.recruiter} />
                 </td>
@@ -147,22 +171,9 @@ export default function LinkedinTrackerPage({ user }) {
                   </a>
                 </td>
 
-                <td className="p-3">{row.status}</td>
+                <td className="p-3 font-medium">{row.status}</td>
 
-                <td className="p-3 text-center">
-                  {daysElapsed(row.appliedDate)} days
-                </td>
-
-                <td className="p-3 text-center">
-                  <button
-                    onClick={() => toggleFollowUp(row)}
-                    className="text-lg"
-                  >
-                    {row.followedUp ? "✅" : "❌"}
-                  </button>
-                </td>
-
-                <td className="p-3 text-center space-x-2">
+                <td className="p-3 text-center space-x-3">
                   <button
                     onClick={() => openEditForm(row)}
                     className="text-blue-600 hover:underline"
@@ -182,8 +193,8 @@ export default function LinkedinTrackerPage({ user }) {
 
             {rows.length === 0 && (
               <tr>
-                <td colSpan="6" className="p-6 text-center text-gray-500">
-                  No applications yet
+                <td colSpan="4" className="p-6 text-center text-gray-500">
+                  No applications yet 🚀
                 </td>
               </tr>
             )}
@@ -194,81 +205,81 @@ export default function LinkedinTrackerPage({ user }) {
       {/* FORM MODAL */}
       {showForm && (
         <div className="modal-overlay">
-          <div className="modal">
-            <h2 className="mb-3 font-semibold">
-              {editingRow ? "Edit Entry" : "Add New Entry"}
+          <div className="modal max-w-lg">
+            <h2 className="mb-4 text-lg font-semibold">
+              {editingRow ? "✏️ Edit Application" : "➕ Add Application"}
             </h2>
 
-            <input
-              placeholder="Recruiter Name"
-              value={form.recruiter.name}
-              onChange={e =>
-                setForm({
-                  ...form,
-                  recruiter: { ...form.recruiter, name: e.target.value }
-                })
-              }
-            />
+            <div className="grid gap-3">
+              {/* Recruiter LinkedIn */}
+              <div>
+                <label className="label">Recruiter LinkedIn</label>
+                <input
+                  className="input"
+                  placeholder="https://linkedin.com/in/..."
+                  value={form.recruiter.linkedin}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      recruiter: { linkedin: e.target.value }
+                    })
+                  }
+                />
+              </div>
 
-            <input
-              placeholder="Phone"
-              value={form.recruiter.phone}
-              onChange={e =>
-                setForm({
-                  ...form,
-                  recruiter: { ...form.recruiter, phone: e.target.value }
-                })
-              }
-            />
+              {/* Job Post */}
+              <div>
+                <label className="label">Job Post URL *</label>
+                <input
+                  className="input"
+                  placeholder="https://linkedin.com/jobs/..."
+                  value={form.postUrl}
+                  onChange={e =>
+                    setForm({ ...form, postUrl: e.target.value })
+                  }
+                />
+              </div>
 
-            <input
-              placeholder="Email"
-              value={form.recruiter.email}
-              onChange={e =>
-                setForm({
-                  ...form,
-                  recruiter: { ...form.recruiter, email: e.target.value }
-                })
-              }
-            />
+              {/* Status + Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Status</label>
+                  <select
+                    className="input"
+                    value={form.status}
+                    onChange={e =>
+                      setForm({ ...form, status: e.target.value })
+                    }
+                  >
+                    <option>Applied on LinkedIn</option>
+                    <option>Applied on Mail</option>
+                    <option>Got Reply</option>
+                    <option>Rejected</option>
+                    <option>Ignored</option>
+                  </select>
+                </div>
 
-            <input
-              placeholder="Recruiter LinkedIn URL"
-              value={form.recruiter.linkedin}
-              onChange={e =>
-                setForm({
-                  ...form,
-                  recruiter: { ...form.recruiter, linkedin: e.target.value }
-                })
-              }
-            />
+                <div>
+                  <label className="label">Applied Date</label>
+                  <input
+                    type="date"
+                    className="input"
+                    value={form.appliedDate}
+                    onChange={e =>
+                      setForm({
+                        ...form,
+                        appliedDate: e.target.value
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
 
-            <input
-              placeholder="LinkedIn Job Post URL"
-              value={form.postUrl}
-              onChange={e => setForm({ ...form, postUrl: e.target.value })}
-            />
-
-            <select
-              value={form.status}
-              onChange={e => setForm({ ...form, status: e.target.value })}
-            >
-              <option>Applied</option>
-              <option>Reached Out</option>
-              <option>Rejected</option>
-            </select>
-
-            <input
-              type="date"
-              value={form.appliedDate}
-              onChange={e =>
-                setForm({ ...form, appliedDate: e.target.value })
-              }
-            />
-
-            <div className="modal-actions">
+            {/* ACTIONS */}
+            <div className="modal-actions mt-5">
               <button className="btn" onClick={saveForm}>
-                Save
+                💾 Save
               </button>
 
               <button

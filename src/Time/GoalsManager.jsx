@@ -81,7 +81,7 @@ function GoalsManager({ user, todayActivities }) {
         marginTop: 30,
         padding: 15,
         borderRadius: 8,
-        background: '#f9f9f9'
+        background: '#204f82'
       }}
     >
       <h2>🎯 Daily Goals</h2>

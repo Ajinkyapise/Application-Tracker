@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 
-import './components/styles.css';
+import './styles.css';
 import Header from './components/common/Header';
 import StatsSection from './components/Applications/StatsSection';
 import SearchBar from './components/Applications/SearchBar';
@@ -238,6 +238,8 @@ function App() {
         <div>
           <Link to="/" className="btn-secondary">🏠 Applications</Link>
 
+
+{/* Removed For noW */}
           {/* <Link to="/courses" className="btn-secondary" style={{ marginLeft: 10 }}>
             📚 Courses
           </Link>
